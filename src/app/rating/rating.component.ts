@@ -1,9 +1,10 @@
 import {
   Component,
-  EventEmitter,
-  Input,
   OnChanges,
-  Output,
+  computed,
+  model,
+  output,
+  signal,
 } from '@angular/core';
 
 const maxRatingInCheatMode = 500;
@@ -16,25 +17,34 @@ const maxRatingInCheatMode = 500;
   styleUrl: './rating.component.css',
 })
 export class RatingComponent implements OnChanges {
-  @Input({ required: true })
-  rating = 0;
+  // rating = input(0);
+  // model used for 2-way data binding
+  // If required, cannot set default value. If not required, need to set default value
+  rating = model.required<number>();
+  ratingChange = output<number>();
 
-  @Output()
-  ratingChange = new EventEmitter<number>();
+  maxRating = signal(5);
+  // maxRating = computed(() => this.rating() > this.maxRating() ? maxRatingInCheatMode : 5);
+  stars = computed(() => this.toStars(this.rating(), this.maxRating()));
 
-  maxRating = 5;
-  stars: Array<boolean> = [];
+  
+  // getMaxRating(rating: number, maxRating: number): number {
+  //   if (rating > maxRating) {
+  //     this.maxRating.set( maxRatingInCheatMode);
+  //   }
 
+  // }
   ngOnChanges(): void {
-    if (this.rating > this.maxRating) {
-      this.maxRating = maxRatingInCheatMode;
+    if (this.rating() > this.maxRating()) {
+      this.maxRating.set( maxRatingInCheatMode);
     }
-    this.#updateStars();
   }
 
-  #updateStars() {
-    this.stars = this.toStars(this.rating, this.maxRating);
-  }
+  // ECMA standard now says # means it's a private method on the class!
+  // #updateStars() {
+    // No longer need this because of the computed method
+  //   this.stars = this.toStars(this.rating(), this.maxRating);
+  // }
 
   private toStars(rating: number, maxRating: number): Array<boolean> {
     const stars = new Array<boolean>(rating);
@@ -45,13 +55,13 @@ export class RatingComponent implements OnChanges {
   }
 
   rate(rating: number): void {
-    this.rating = rating;
-    this.#updateStars();
-    this.ratingChange.next(rating);
+    this.rating.set(rating);
+    // this.#updateStars();
+    // Since it's a model signal, no need to call .next
+    // this.rating.next(rating);
   }
 
   enterCheatMode() {
-    this.maxRating = maxRatingInCheatMode;
-    this.#updateStars();
+    this.maxRating.set(maxRatingInCheatMode);
   }
 }
